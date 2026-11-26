@@ -1,0 +1,25 @@
+Banco de Dados - Resumo de Estudo
+
+1. O que e normalizacao
+Normalizacao e o processo de organizar as tabelas de um banco de dados para reduzir a repeticao de informacoes e evitar anomalias de insercao, atualizacao e exclusao. O objetivo e que cada fato seja guardado em um unico lugar.
+
+2. Primeira Forma Normal (1FN)
+Uma tabela esta na 1FN quando todos os campos guardam valores atomicos, isto e, um unico valor por celula. Por exemplo, uma coluna "telefones" com varios numeros separados por virgula viola a 1FN. A solucao e criar uma tabela separada para os telefones, ligada ao cliente por uma chave estrangeira.
+
+3. Segunda Forma Normal (2FN)
+Uma tabela esta na 2FN quando esta na 1FN e todos os atributos que nao fazem parte da chave dependem da chave primaria inteira. Isso so e um problema quando a chave primaria e composta. Se o nome do produto depende apenas do codigo do produto, e nao do par pedido-produto, ele deve ir para a tabela de produtos.
+
+4. Terceira Forma Normal (3FN)
+Uma tabela esta na 3FN quando esta na 2FN e nenhum atributo nao chave depende de outro atributo nao chave. Se a cidade determina o estado, o estado nao deve ficar na tabela de clientes: ele vai para uma tabela de cidades.
+
+5. Chaves
+A chave primaria identifica cada linha de forma unica e nao pode ser nula. A chave estrangeira aponta para a chave primaria de outra tabela e garante a integridade referencial. Uma chave candidata e qualquer conjunto de colunas que poderia ser chave primaria.
+
+6. Indices
+Um indice acelera consultas de leitura, mas deixa as escritas um pouco mais lentas, porque precisa ser atualizado a cada insercao. Indices devem ser criados nas colunas usadas com frequencia em filtros e junções.
+
+7. Transacoes e ACID
+Uma transacao agrupa varias operacoes que precisam acontecer juntas. As propriedades ACID sao: Atomicidade (tudo ou nada), Consistencia (as regras do banco continuam validas), Isolamento (transacoes simultaneas nao se atrapalham) e Durabilidade (o resultado confirmado nao se perde).
+
+8. Quando desnormalizar
+Em sistemas de leitura intensa, como relatorios, as vezes se repete um dado de proposito para evitar junções caras. Isso e a desnormalizacao. Ela troca espaco e risco de inconsistencia por velocidade de consulta, e deve ser uma decisao consciente.
