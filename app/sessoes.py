@@ -31,6 +31,11 @@ class GerenciadorDeSessoes:
             self.sessoes[novo_sid] = [self.criar_indice(), self.relogio()]
             return novo_sid, self.sessoes[novo_sid][0], True
 
+    def existe(self, sid):
+        with self.trava:
+            self._limpar_vencidas()
+            return bool(sid) and sid in self.sessoes
+
     def total(self):
         with self.trava:
             return len(self.sessoes)

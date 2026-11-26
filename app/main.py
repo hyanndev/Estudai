@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from fastapi import Depends, FastAPI, HTTPException, Request, Response, UploadFile
 from fastapi.responses import FileResponse
@@ -10,6 +11,7 @@ from app.materiais import (
     TAMANHO_MAXIMO_ARQUIVO,
     adicionar_material,
 )
+from app.limitador import LimitadorDeUso
 from app.resposta import responder
 from app.sessoes import GerenciadorDeSessoes
 
@@ -21,6 +23,24 @@ sessoes = GerenciadorDeSessoes(
     criar_indice=lambda: carregar_exemplos().copiar(),
     validade_segundos=VALIDADE_SESSAO,
 )
+
+
+
+def inteiro_do_ambiente(nome, padrao):
+    try:
+        valor = int(os.getenv(nome, ""))
+        return valor if valor > 0 else padrao
+    except ValueError:
+        return padrao
+
+
+LIMITE_PERGUNTAS_POR_MINUTO = inteiro_do_ambiente("LIMITE_PERGUNTAS_POR_MINUTO", 6)
+LIMITE_ENVIOS_POR_HORA = inteiro_do_ambiente("LIMITE_ENVIOS_POR_HORA", 10)
+LIMITE_GERAL_POR_HORA = inteiro_do_ambiente("LIMITE_GERAL_POR_HORA", 300)
+
+limite_perguntas = LimitadorDeUso(LIMITE_PERGUNTAS_POR_MINUTO, 60)
+limite_envios = LimitadorDeUso(LIMITE_ENVIOS_POR_HORA, 3600)
+limite_geral = LimitadorDeUso(LIMITE_GERAL_POR_HORA, 3600)
 
 app = FastAPI(title="Estudaí")
 app.mount("/static", StaticFiles(directory=PASTA_ESTATICA), name="static")
@@ -47,6 +67,26 @@ def sessao_atual(requisicao: Request, resposta: Response):
             secure=https,
         )
     return indice
+
+
+def identificar_visitante(requisicao: Request):
+    encaminhado = requisicao.headers.get("x-forwarded-for", "")
+    if encaminhado:
+        return encaminhado.split(",")[0].strip()
+    return requisicao.client.host if requisicao.client else "desconhecido"
+
+
+def aplicar_limite(limitador, requisicao: Request):
+    liberado, espera = limite_geral.tentar("geral")
+    if liberado:
+        liberado, espera = limitador.tentar(identificar_visitante(requisicao))
+    if not liberado:
+        segundos = max(1, int(espera) + 1)
+        raise HTTPException(
+            status_code=429,
+            detail=f"Muitas requisições. Tente de novo em {segundos} segundos.",
+            headers={"Retry-After": str(segundos)},
+        )
 
 
 def resumo(indice):
@@ -76,6 +116,7 @@ def listar_materiais(indice=Depends(sessao_atual)):
 
 @app.post("/materiais", status_code=201)
 def enviar_material(requisicao: Request, arquivo: UploadFile, indice=Depends(sessao_atual)):
+    aplicar_limite(limite_envios, requisicao)
     tamanho = requisicao.headers.get("content-length", "")
     if tamanho.isdigit() and int(tamanho) > TAMANHO_MAXIMO_ARQUIVO + 200_000:
         raise HTTPException(status_code=413, detail="O arquivo passa de 2 MB.")
@@ -98,7 +139,8 @@ def remover_material(nome: str, indice=Depends(sessao_atual)):
 
 
 @app.post("/perguntar")
-def perguntar(pergunta: Pergunta, indice=Depends(sessao_atual)):
+def perguntar(requisicao: Request, pergunta: Pergunta, indice=Depends(sessao_atual)):
+    aplicar_limite(limite_perguntas, requisicao)
     texto = pergunta.texto.strip()
     if len(texto) < 3:
         raise HTTPException(status_code=422, detail="Escreva uma pergunta.")

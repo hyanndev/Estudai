@@ -19,11 +19,14 @@ def carregar_exemplos():
         indice.carregar(dados["registros"], np.array(dados["vetores"]))
     else:
         indice.adicionar_trechos(carregar_materiais())
-        CACHE.parent.mkdir(exist_ok=True)
-        CACHE.write_text(
-            json.dumps({"registros": indice.registros, "vetores": indice.vetores.tolist()}),
-            encoding="utf-8",
-        )
+        try:
+            CACHE.parent.mkdir(exist_ok=True)
+            CACHE.write_text(
+                json.dumps({"registros": indice.registros, "vetores": indice.vetores.tolist()}),
+                encoding="utf-8",
+            )
+        except OSError:
+            pass
     for registro in indice.registros:
         registro["exemplo"] = True
     _exemplos = indice

@@ -27,6 +27,14 @@ def sessoes_falsas(monkeypatch):
     monkeypatch.setattr(main, "sessoes", GerenciadorDeSessoes(criar_indice=criar))
 
 
+@pytest.fixture(autouse=True)
+def limites_novos(monkeypatch):
+    from app.limitador import LimitadorDeUso
+    monkeypatch.setattr(main, "limite_perguntas", LimitadorDeUso(3, 60))
+    monkeypatch.setattr(main, "limite_envios", LimitadorDeUso(2, 3600))
+    monkeypatch.setattr(main, "limite_geral", LimitadorDeUso(1000, 3600))
+
+
 def enviar(cliente, nome="aula.txt", conteudo=TEXTO):
     return cliente.post("/materiais", files={"arquivo": (nome, conteudo, "text/plain")})
 
@@ -140,3 +148,40 @@ def test_cookie_falso_nao_da_acesso_a_sessao_alheia():
     invasor.cookies.set("sessao", "tentativa-de-adivinhar")
     nomes = [m["nome"] for m in invasor.get("/materiais").json()["materiais"]]
     assert "da_ana.txt" not in nomes
+
+
+def test_limite_de_perguntas_devolve_429_com_retry_after(monkeypatch):
+    monkeypatch.setattr(main, "responder", lambda texto, indice=None: {"resposta": "ok", "fontes": []})
+    cliente = TestClient(main.app)
+    for _ in range(3):
+        assert cliente.post("/perguntar", json={"texto": "uma pergunta"}).status_code == 200
+    r = cliente.post("/perguntar", json={"texto": "uma pergunta"})
+    assert r.status_code == 429
+    assert int(r.headers["retry-after"]) >= 1
+
+
+def test_limite_de_envios_devolve_429():
+    cliente = TestClient(main.app)
+    assert enviar(cliente, "a.txt").status_code == 201
+    assert enviar(cliente, "b.txt").status_code == 201
+    assert enviar(cliente, "c.txt").status_code == 429
+
+
+def test_limite_e_por_visitante_pelo_x_forwarded_for(monkeypatch):
+    monkeypatch.setattr(main, "responder", lambda texto, indice=None: {"resposta": "ok", "fontes": []})
+    cliente = TestClient(main.app)
+    for _ in range(3):
+        cliente.post("/perguntar", json={"texto": "uma pergunta"}, headers={"x-forwarded-for": "1.1.1.1"})
+    bloqueado = cliente.post("/perguntar", json={"texto": "uma pergunta"}, headers={"x-forwarded-for": "1.1.1.1"})
+    livre = cliente.post("/perguntar", json={"texto": "uma pergunta"}, headers={"x-forwarded-for": "2.2.2.2"})
+    assert bloqueado.status_code == 429
+    assert livre.status_code == 200
+
+
+def test_limite_geral_protege_todos(monkeypatch):
+    from app.limitador import LimitadorDeUso
+    monkeypatch.setattr(main, "limite_geral", LimitadorDeUso(1, 3600))
+    monkeypatch.setattr(main, "responder", lambda texto, indice=None: {"resposta": "ok", "fontes": []})
+    cliente = TestClient(main.app)
+    assert cliente.post("/perguntar", json={"texto": "uma pergunta"}, headers={"x-forwarded-for": "1.1.1.1"}).status_code == 200
+    assert cliente.post("/perguntar", json={"texto": "uma pergunta"}, headers={"x-forwarded-for": "2.2.2.2"}).status_code == 429

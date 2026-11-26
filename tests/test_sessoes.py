@@ -73,3 +73,19 @@ def test_limite_de_sessoes_remove_a_mais_antiga():
     assert gerenciador.total() == 2
     _, _, nova = gerenciador.obter_ou_criar(primeira)
     assert nova is True
+
+
+def test_existe_so_para_sessoes_criadas_aqui():
+    gerenciador = criar()
+    sid, _, _ = gerenciador.obter_ou_criar(None)
+    assert gerenciador.existe(sid) is True
+    assert gerenciador.existe("inventado") is False
+    assert gerenciador.existe(None) is False
+
+
+def test_existe_considera_a_expiracao():
+    relogio = Relogio()
+    gerenciador = criar(relogio, validade_segundos=100)
+    sid, _, _ = gerenciador.obter_ou_criar(None)
+    relogio.agora = 101
+    assert gerenciador.existe(sid) is False

@@ -1,10 +1,9 @@
 import os
+import time
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from app.busca import carregar_exemplos
-
-import time
 
 load_dotenv()
 
@@ -12,6 +11,8 @@ MODELO = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
 TEMPO_LIMITE_MS = 20000
 LIMIAR_MINIMO = 0.61
 SEM_RESPOSTA = "Não encontrei isso nos seus materiais."
+CODIGOS_TEMPORARIOS = {429, 500, 502, 503, 504}
+FALHA_NA_GERACAO = "Não foi possível gerar a resposta agora. Tente de novo em instantes."
 SEM_MATERIAIS = "Você ainda não tem materiais. Envie um arquivo .txt ou .pdf para começar."
 
 INSTRUCOES = (
@@ -31,6 +32,26 @@ def montar_contexto(trechos):
     return "\n\n".join(blocos)
 
 
+def gerar_texto(cliente, conteudo):
+    for tentativa in range(2):
+        try:
+            resposta = cliente.models.generate_content(
+                model=MODELO,
+                contents=conteudo,
+                config=types.GenerateContentConfig(system_instruction=INSTRUCOES, temperature=0.2),
+            )
+            texto = (resposta.text or "").replace("*", "").strip()
+            return texto or None
+        except Exception as erro:
+            codigo = getattr(erro, "code", None)
+            temporario = codigo in CODIGOS_TEMPORARIOS or "timeout" in type(erro).__name__.lower()
+            print(f"Falha ao gerar a resposta (tentativa {tentativa + 1}): {type(erro).__name__} | código: {codigo}")
+            if not temporario or tentativa == 1:
+                return None
+            time.sleep(1.5)
+    return None
+
+
 def responder(pergunta, indice=None):
     if indice is None:
         indice = carregar_exemplos()
@@ -45,19 +66,9 @@ def responder(pergunta, indice=None):
         api_key=os.getenv("GEMINI_API_KEY"),
         http_options=types.HttpOptions(timeout=TEMPO_LIMITE_MS),
     )
-    inicio = time.perf_counter()
-    try:
-        resposta = cliente.models.generate_content(
-            model=MODELO,
-            contents=conteudo,
-            config=types.GenerateContentConfig(system_instruction=INSTRUCOES, temperature=0.2),
-        )
-        texto = (resposta.text or "").replace("*", "").strip()
-        print(f"Resposta gerada em {time.perf_counter() - inicio:.1f}s")
-    except Exception as erro:
-        duracao = time.perf_counter() - inicio
-        print(f"Falha ao gerar a resposta após {duracao:.1f}s: {type(erro).__name__} | código: {getattr(erro, 'code', '?')} | {str(getattr(erro, 'message', ''))[:200]}")
-        texto = "Não foi possível gerar a resposta agora."
+    texto = gerar_texto(cliente, conteudo)
+    if texto is None:
+        return {"resposta": FALHA_NA_GERACAO, "fontes": []}
     fontes = [{"fonte": t["fonte"], "trecho": t["trecho"], "nota": t["nota"], "texto": t["texto"]} for t in trechos]
     if texto.startswith("Não encontrei"):
         fontes = []
