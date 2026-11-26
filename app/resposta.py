@@ -2,7 +2,9 @@ import os
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-from app.busca import buscar
+from app.busca import carregar_exemplos
+
+import time
 
 load_dotenv()
 
@@ -10,6 +12,7 @@ MODELO = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
 TEMPO_LIMITE_MS = 20000
 LIMIAR_MINIMO = 0.61
 SEM_RESPOSTA = "Não encontrei isso nos seus materiais."
+SEM_MATERIAIS = "Você ainda não tem materiais. Envie um arquivo .txt ou .pdf para começar."
 
 INSTRUCOES = (
     "Você é um assistente de estudos. Responda em português, de forma clara e curta. "
@@ -28,8 +31,12 @@ def montar_contexto(trechos):
     return "\n\n".join(blocos)
 
 
-def responder(pergunta):
-    trechos = buscar(pergunta, k=3)
+def responder(pergunta, indice=None):
+    if indice is None:
+        indice = carregar_exemplos()
+    if indice.total_trechos() == 0:
+        return {"resposta": SEM_MATERIAIS, "fontes": []}
+    trechos = indice.buscar(pergunta, k=3)
     if not trechos or trechos[0]["nota"] < LIMIAR_MINIMO:
         return {"resposta": SEM_RESPOSTA, "fontes": []}
     contexto = montar_contexto(trechos)
@@ -38,6 +45,7 @@ def responder(pergunta):
         api_key=os.getenv("GEMINI_API_KEY"),
         http_options=types.HttpOptions(timeout=TEMPO_LIMITE_MS),
     )
+    inicio = time.perf_counter()
     try:
         resposta = cliente.models.generate_content(
             model=MODELO,
@@ -45,10 +53,12 @@ def responder(pergunta):
             config=types.GenerateContentConfig(system_instruction=INSTRUCOES, temperature=0.2),
         )
         texto = (resposta.text or "").replace("*", "").strip()
+        print(f"Resposta gerada em {time.perf_counter() - inicio:.1f}s")
     except Exception as erro:
-        print(f"Falha ao gerar a resposta: {type(erro).__name__} | código: {getattr(erro, 'code', '?')}")
+        duracao = time.perf_counter() - inicio
+        print(f"Falha ao gerar a resposta após {duracao:.1f}s: {type(erro).__name__} | código: {getattr(erro, 'code', '?')} | {str(getattr(erro, 'message', ''))[:200]}")
         texto = "Não foi possível gerar a resposta agora."
-    fontes = [{"fonte": t["fonte"], "trecho": t["trecho"], "nota": t["nota"]} for t in trechos]
+    fontes = [{"fonte": t["fonte"], "trecho": t["trecho"], "nota": t["nota"], "texto": t["texto"]} for t in trechos]
     if texto.startswith("Não encontrei"):
         fontes = []
     return {"resposta": texto, "fontes": fontes}

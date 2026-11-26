@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <title>Estudaí</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/estilo.css">
+</head>
+<body>
+  <a class="pular" href="#principal">Ir para as perguntas</a>
+
+  <header class="topo">
+    <div class="topo-interno">
+      <a class="marca" href="/" aria-label="Estudaí, página inicial">
+        <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true">
+          <rect width="32" height="32" rx="8" fill="currentColor" opacity="0.18"/>
+          <path d="M16 9.5c-2.2-1.5-5-1.9-8-1.5v14c3-.4 5.8 0 8 1.5 2.2-1.5 5-1.9 8-1.5V8c-3-.4-5.8 0-8 1.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+          <path d="M16 9.5v14" stroke="currentColor" stroke-width="1.8"/>
+          <path d="M10.5 12.5h2.5M10.5 15.5h2.5" stroke="#ffe27a" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        <span>Estudaí</span>
+      </a>
+      <p class="lema">Pergunte aos seus próprios materiais e confira de onde veio a resposta.</p>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="lateral">
+      <details class="materiais" id="materiais" open>
+        <summary>
+          <span class="titulo-lateral">Seus materiais</span>
+          <span id="resumo-materiais" class="resumo"></span>
+        </summary>
+        <div class="painel">
+          <ul id="lista-materiais" class="lista-materiais"></ul>
+
+          <div id="area-envio" class="envio">
+            <input type="file" id="arquivo" accept=".txt,.pdf" multiple class="so-leitor">
+            <label for="arquivo" class="botao-envio">Adicionar material</label>
+            <p class="dica-envio">ou arraste arquivos .txt e .pdf para cá</p>
+            <p id="limites" class="dica-envio"></p>
+          </div>
+
+          <p id="status-envio" class="status-envio" role="status"></p>
+          <p id="aviso-sessao" class="aviso-sessao" role="alert" hidden></p>
+
+          <p class="privacidade">
+            Os arquivos ficam só nesta sessão e somem após 1 hora sem uso.
+            O conteúdo é processado pelo Google (Gemini): não envie dados pessoais ou confidenciais.
+          </p>
+        </div>
+      </details>
+    </aside>
+
+    <main id="principal" class="conversa">
+      <section id="vazio" class="vazio">
+        <h1>O que você quer entender hoje?</h1>
+        <p id="texto-vazio">Escreva uma dúvida sobre os seus materiais. Cada resposta mostra o trecho de onde saiu.</p>
+        <div id="sugestoes" class="sugestoes" hidden>
+          <button type="button" class="sugestao">O que é WIP no Kanban?</button>
+          <button type="button" class="sugestao">Qual a diferença entre TCP e UDP?</button>
+          <button type="button" class="sugestao">Quando uma tabela está na 3FN?</button>
+        </div>
+      </section>
+
+      <ol id="mensagens" class="mensagens" aria-live="polite"></ol>
+
+      <form id="formulario" class="barra">
+        <label for="pergunta" class="so-leitor">Sua pergunta</label>
+        <textarea id="pergunta" rows="1" maxlength="500" placeholder="Escreva sua dúvida"></textarea>
+        <button type="submit" id="enviar">Perguntar</button>
+        <p id="contagem" class="contagem" aria-live="off"></p>
+      </form>
+    </main>
+  </div>
+
+  <footer class="rodape">
+    <p>As respostas podem errar. Confira sempre o trecho indicado antes de estudar por ele.</p>
+    <p>Desenvolvido por Hyann · <a href="https://hyann.dev">hyann.dev</a></p>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
