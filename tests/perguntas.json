@@ -1,0 +1,23 @@
+[
+  {"pergunta": "O que é normalização em banco de dados?", "fonte": "banco_de_dados.txt", "palavra": "unico lugar"},
+  {"pergunta": "Quando uma tabela está na terceira forma normal?", "fonte": "banco_de_dados.txt", "palavra": "nao chave depende de outro"},
+  {"pergunta": "O que significa o A de ACID?", "fonte": "banco_de_dados.txt", "palavra": "Atomicidade"},
+  {"pergunta": "Quando vale a pena desnormalizar?", "fonte": "banco_de_dados.txt", "palavra": "leitura intensa"},
+  {"pergunta": "Para que serve um índice no banco de dados?", "fonte": "banco_de_dados.txt", "palavra": "acelera consultas"},
+  {"pergunta": "Quais são os papéis do Scrum?", "fonte": "metodos_ageis.pdf", "palavra": "Product Owner"},
+  {"pergunta": "O que é WIP no Kanban?", "fonte": "metodos_ageis.pdf", "palavra": "WIP"},
+  {"pergunta": "Como funciona o Planning Poker?", "fonte": "metodos_ageis.pdf", "palavra": "Planning Poker"},
+  {"pergunta": "O que é a Definition of Done?", "fonte": "metodos_ageis.pdf", "palavra": "Definition of Done"},
+  {"pergunta": "Qual é o formato de uma user story?", "fonte": "metodos_ageis.pdf", "palavra": "user story descreve"},
+  {"pergunta": "Qual a diferença entre TCP e UDP?", "fonte": "redes_de_computadores.pdf", "palavra": "UDP nao confirma"},
+  {"pergunta": "Como o computador descobre o endereço de um site?", "fonte": "redes_de_computadores.pdf", "palavra": "DNS traduz"},
+  {"pergunta": "Qual porta o HTTPS usa?", "fonte": "redes_de_computadores.pdf", "palavra": "443"},
+  {"pergunta": "Para que serve o DHCP?", "fonte": "redes_de_computadores.pdf", "palavra": "DHCP entrega"},
+  {"pergunta": "Qual a diferença entre roteador e switch?", "fonte": "redes_de_computadores.pdf", "palavra": "switch conecta"},
+  {"pergunta": "Qual é a capital da França?", "fonte": null, "palavra": null},
+  {"pergunta": "O que é Docker?", "fonte": null, "palavra": null},
+  {"pergunta": "Como funciona um banco de dados NoSQL?", "fonte": null, "palavra": null},
+  {"pergunta": "O que é o Git e para que serve?", "fonte": null, "palavra": null},
+  {"pergunta": "Qual a diferença entre Java e Python?", "fonte": null, "palavra": null},
+  {"pergunta": "Como funciona o protocolo BGP?", "fonte": null, "palavra": null}
+]
