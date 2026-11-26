@@ -82,9 +82,10 @@ def aplicar_limite(limitador, requisicao: Request):
         liberado, espera = limitador.tentar(identificar_visitante(requisicao))
     if not liberado:
         segundos = max(1, int(espera) + 1)
+        unidade = "segundo" if segundos == 1 else "segundos"
         raise HTTPException(
             status_code=429,
-            detail=f"Muitas requisições. Tente de novo em {segundos} segundos.",
+            detail=f"Muitas requisições. Tente de novo em {segundos} {unidade}.",
             headers={"Retry-After": str(segundos)},
         )
 
